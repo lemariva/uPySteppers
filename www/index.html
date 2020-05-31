@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>wESP32 Train Control</title>
+    <meta name="robots" content="index,follow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <script type="text/javascript">     
+      function isNumber(evt) {
+              evt = (evt) ? evt : window.event;
+              var charCode = (evt.which) ? evt.which : evt.keyCode;
+              if ( (charCode > 31 && charCode < 48) || charCode > 57) {
+                  return false;
+              }
+              return true;
+          }
+      </script>
+  </head>
+  <body onload="updateForm()">
+    <div class="container content">
+      <div class="page-header">
+        <img src="logo.svg" alt="LeMaRiva|tech">
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <form id="uPySteppers">
+            <section class="section-preview">
+              <div class="form-group">
+                <label for="formRotation">Rotation (°):</label>
+                <input type="text" class="form-control" value="360" id="formRotation" placeholder="Rotation (°)" onkeypress="return isNumber(event)" onpaste="return false;"> 
+              </div>
+              <div class="form-group">
+                <label for="formDelay">Delay (ms):</label>
+                <input type="text" class="form-control" value="1000" id="formDelay" placeholder="Delay (ms)" onkeypress="return isNumber(event)" onpaste="return false;" disabled>
+              </div>
+              <div class="form-group">
+                <label for="formSpeed">Speed (0-100%):</label>
+                <input type="range" min="0" max="100" value="50" step="5" class="slider custom-range" id="formSpeed" style="width: 100%;">
+              </div>
+              <div class="form-group">
+                <label for="forDirection">Direction:</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="forDirection" id="formClockwise" value="Clockwise" checked>
+                  <label class="form-check-label" for="formClockwise">Clockwise</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="forDirection" id="formCClockwise" value="CClockwise">
+                  <label class="form-check-label" for="formCClockwise">Counterclockwise</label>
+                </div>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="formBrake">
+                <label class="form-check-label" for="formBrake">
+                  Stepper brake
+                </label>
+              </div>
+              <div class="form-check">
+                <button class="btn btn-primary" type="button" onclick="submitForm()">Configure</button>
+              </div>
+            </section>
+          </form>
+        </div>
+      </div>
+
+        <footer class="footer">
+          <div class="container">
+            <span class="text-muted"><a href="https://lemariva.com">LeMaRiva|tech</a></span>
+          </div>
+        </footer>
+    </div>
+
+    <script language="javascript"> 
+      var update_track = 0;
+      var update_input = 0;
+      var uPySteppers = document.getElementById("uPySteppers");
+
+      function updateForm() {
+          var xhttp = new XMLHttpRequest();
+          
+          xhttp.open("GET", "upy", true);
+          xhttp.send();
+
+          xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200 
+          && (!update_input || this_update == update_input)) {
+            update_input = 0;
+            var obj = JSON.parse(this.response);
+            uPySteppers.formRotation.value = obj.rotation;
+            uPySteppers.formDelay.value  = obj.delay;
+            uPySteppers.formSpeed.value  = obj.speed;
+            if (obj.clockwise) {
+              uPySteppers.formClockwise.checked = true;
+              uPySteppers.formCClockwise.checked = false;
+            }else{
+              uPySteppers.formClockwise.checked = false;
+              uPySteppers.formCClockwise.checked = true;
+            }
+            uPySteppers.formBrake.checked = obj.brake;
+          }
+        };
+      }
+      function submitForm() {
+        update_track++;
+
+        rotation = uPySteppers.formRotation.value;
+        delay = uPySteppers.formDelay.value;
+        speed = uPySteppers.formSpeed.value;
+        direction = uPySteppers.formClockwise.checked ? 1 : 0; 
+        brake = uPySteppers.formBrake.checked ? 1: 0;
+
+        var this_update = update_track;
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200 
+          && (!update_input || this_update == update_input)) {
+            update_input = 0;
+          }
+        };
+          xhttp.open("GET", "upy/" + rotation + "/" + delay + "/" + speed +
+                            "/" + direction + "/" + brake, true);
+          xhttp.send();
+      }
+
+    </script>    
+    
+  </body>
+</html>
+
